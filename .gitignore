@@ -1,0 +1,20 @@
+# Never commit ChatGPT exports or private research output.
+conversations.json
+chatgpt-export/
+*.zip
+*.jsonl
+/data/raw/**
+/data/processed/**
+/reports/**
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!reports/.gitkeep
+
+# Python build/test artifacts
+.venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.egg-info/
+dist/
+build/
