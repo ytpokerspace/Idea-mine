@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "conversation-research-engine"
+version = "0.1.0"
+description = "Privacy-first local importer and five-conversation batcher for ChatGPT exports"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "Conversation Research Engine contributors"}]
+dependencies = []
+
+[project.scripts]
+convo-miner = "convo_miner.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
