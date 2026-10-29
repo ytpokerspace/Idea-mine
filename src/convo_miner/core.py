@@ -245,7 +245,7 @@ def search_index(index_path: Path, query: str, limit: int = 10) -> list[dict[str
     """Search every query term locally; rank by term frequency and title matches."""
     if limit < 1:
         raise ValueError("limit must be at least 1")
-    terms = re.findall(r"[^\\W_]+(?:[-'][^\\W_]+)*", query.casefold(), flags=re.UNICODE)
+    terms = re.findall(r"[^\W_]+(?:[-'][^\W_]+)*", query.casefold(), flags=re.UNICODE)
     if not terms:
         raise ValueError("query must contain at least one searchable word")
 
@@ -259,8 +259,8 @@ def search_index(index_path: Path, query: str, limit: int = 10) -> list[dict[str
             continue
         text = record["text"]
         title = str(record.get("title", ""))
-        words = re.findall(r"[^\\W_]+(?:[-'][^\\W_]+)*", text.casefold(), flags=re.UNICODE)
-        title_words = re.findall(r"[^\\W_]+(?:[-'][^\\W_]+)*", title.casefold(), flags=re.UNICODE)
+        words = re.findall(r"[^\W_]+(?:[-'][^\W_]+)*", text.casefold(), flags=re.UNICODE)
+        title_words = re.findall(r"[^\W_]+(?:[-'][^\W_]+)*", title.casefold(), flags=re.UNICODE)
         word_counts: dict[str, int] = {}
         for word in words:
             word_counts[word] = word_counts.get(word, 0) + 1
