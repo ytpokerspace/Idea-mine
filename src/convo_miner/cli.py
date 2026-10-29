@@ -46,7 +46,7 @@ def main() -> int:
         }, indent=2))
         return 0
     except (OSError, json.JSONDecodeError, ValueError) as exc:
-        print(f"Import failed: {exc}")
+        print(f"{args.command.title()} failed: {exc}")
         return 1
 
 
