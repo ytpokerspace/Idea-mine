@@ -272,7 +272,7 @@ def search_index(index_path: Path, query: str, limit: int = 10) -> list[dict[str
         folded = text.casefold()
         positions = [folded.find(term) for term in terms if term in folded]
         start = max(0, (min(positions) if positions else 0) - 70)
-        excerpt = text[start:start + 200].replace("\\n", " ")
+        excerpt = text[start:start + 200].replace("\n", " ")
         if start:
             excerpt = "…" + excerpt
         if start + 200 < len(text):
