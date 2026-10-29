@@ -221,6 +221,75 @@ def write_catalog(conversations: list[Conversation], output_path: Path) -> None:
     output_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
+
+def write_search_index(conversations: list[Conversation], output_path: Path) -> None:
+    """Write a local, plain-JSON full-text index with traceable message IDs."""
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    records: list[dict[str, Any]] = []
+    for conv in conversations:
+        for message_index, message in enumerate(conv.messages, start=1):
+            records.append({
+                "conversation_id": conv.conversation_id,
+                "title": conv.title,
+                "message_id": stable_id(conv.conversation_id, message_index, message.text),
+                "role": message.role,
+                "text": message.text,
+            })
+    output_path.write_text(
+        json.dumps(records, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+
+def search_index(index_path: Path, query: str, limit: int = 10) -> list[dict[str, Any]]:
+    """Search every query term locally; rank by term frequency and title matches."""
+    if limit < 1:
+        raise ValueError("limit must be at least 1")
+    terms = re.findall(r"[^\\W_]+(?:[-'][^\\W_]+)*", query.casefold(), flags=re.UNICODE)
+    if not terms:
+        raise ValueError("query must contain at least one searchable word")
+
+    raw = json.loads(index_path.read_text(encoding="utf-8"))
+    if not isinstance(raw, list):
+        raise ValueError("search index must contain a JSON array")
+
+    results: list[dict[str, Any]] = []
+    for record in raw:
+        if not isinstance(record, dict) or not isinstance(record.get("text"), str):
+            continue
+        text = record["text"]
+        title = str(record.get("title", ""))
+        words = re.findall(r"[^\\W_]+(?:[-'][^\\W_]+)*", text.casefold(), flags=re.UNICODE)
+        title_words = re.findall(r"[^\\W_]+(?:[-'][^\\W_]+)*", title.casefold(), flags=re.UNICODE)
+        word_counts: dict[str, int] = {}
+        for word in words:
+            word_counts[word] = word_counts.get(word, 0) + 1
+        # AND semantics: every query term must occur in the message or its title.
+        if not all(term in word_counts or term in title_words for term in terms):
+            continue
+        score = sum(word_counts.get(term, 0) for term in terms)
+        score += sum(2 for term in terms if term in title_words)
+        folded = text.casefold()
+        positions = [folded.find(term) for term in terms if term in folded]
+        start = max(0, (min(positions) if positions else 0) - 70)
+        excerpt = text[start:start + 200].replace("\\n", " ")
+        if start:
+            excerpt = "…" + excerpt
+        if start + 200 < len(text):
+            excerpt += "…"
+        results.append({
+            "conversation_id": str(record.get("conversation_id", "")),
+            "title": title,
+            "message_id": str(record.get("message_id", "")),
+            "role": str(record.get("role", "unknown")),
+            "score": score,
+            "excerpt": excerpt,
+        })
+
+    results.sort(key=lambda item: (-item["score"], item["title"].casefold(), item["message_id"]))
+    return results[:limit]
+
+
 def keyword_candidates(text: str, limit: int = 12) -> list[str]:
     """Cheap local indexing aid, not semantic extraction or an AI claim."""
     words = re.findall(r"[A-Za-z][A-Za-z0-9_-]{2,}", text.lower())
