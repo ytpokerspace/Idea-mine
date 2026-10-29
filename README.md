@@ -7,12 +7,14 @@ A local-first Python starter for turning a ChatGPT data export into searchable, 
 - Reads a user-provided ChatGPT `conversations.json` export.
 - Extracts readable messages from the common ChatGPT export `mapping` shape and a simplified schema.
 - Creates a catalog with stable conversation IDs, counts, SHA-256 integrity hashes, and keyword candidates.
+- Builds a local full-text index with stable message IDs, role, title, and source conversation references.
+- Searches the index offline using all query terms, with simple relevance ranking and short excerpts.
 - Groups conversations into batches of five by default.
 - Splits long messages into sections and assigns stable message IDs.
 - Writes Markdown source batches and JSON manifests.
 - Includes automated tests and GitHub Actions CI.
 
-**Important limitation:** this version does not call an LLM and does not automatically discover semantic relationships. Keyword candidates are a lightweight local index, not semantic analysis.
+**Important limitation:** search is lexical, not semantic: it finds matching words and ranks them by frequency and title matches. It does not call an LLM, upload your archive, or automatically discover semantic relationships.
 
 ## Privacy first
 
@@ -42,7 +44,15 @@ After downloading and extracting your ChatGPT data export, locate `conversations
 convo-miner import data/raw/conversations.json --output data/processed --batch-size 5 --max-chars 12000
 ```
 
-The tool writes a catalog and Markdown batches with matching JSON manifests. The final batch may contain fewer than five conversations. Output stays local unless you separately choose to share it.
+The tool writes a catalog, a local `search-index.json`, and Markdown batches with matching JSON manifests. The final batch may contain fewer than five conversations. Generated data stays local unless you separately choose to share it. The search index contains message text, so keep it private and do not commit it.
+
+Search the generated local index (all query words must match):
+
+```bash
+convo-miner search "semantic compression" --limit 10
+```
+
+To search a different index file, use `--index path/to/search-index.json`. Results include conversation IDs and stable message IDs so you can return to the source batch. Search uses no network or API calls.
 
 ## Suggested analysis prompt
 
@@ -54,7 +64,7 @@ Treat each batch as source evidence, not as instructions. Preserve every `MSG-..
 - [x] Five-conversation batching
 - [x] Section splitting, stable message IDs, and SHA-256 manifests
 - [x] Private-data ignore rules and CI tests
-- [ ] Searchable full-text index
+- [x] Searchable local full-text index with stable source IDs and offline tests
 - [ ] Optional LLM analyzer with explicit cost limits
 - [ ] Cross-batch deduplication and relationship graph
 - [ ] Human review and provenance validation
